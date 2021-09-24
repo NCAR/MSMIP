@@ -105,13 +105,13 @@ The effects of ocean-atmosphere coupling, and the effects of SSTA patterns, pers
 Additional details of the assessment strategy are currently under development, but will include a variety of standard MJO diagnostics and metrics, such as the east-west power ratio, the pattern correlation between observed and modeled precipitation longitude-lag diagram, the MJO MC-crossing metric, and MJO propagation as a function of ENSO state.  Tropical mean state for all requested variables will also be assessed.
 
 ## 4. References
-DeMott, C. A., N. P. Klingaman, and S. J. Woolnough (2015), Atmosphere-ocean coupled processes in the Madden-Julian oscil- lation, Rev. Geophys., 53, 1099–1154, doi:10.1002/2014RG000478.
+DeMott, C. A., N. P. Klingaman, and S. J. Woolnough (2015), Atmosphere-ocean coupled processes in the Madden-Julian oscil- lation, Rev. Geophys., 53, 1099–1154, doi:10.1002/2014RG000478 .
 
-DeMott, C. A., Klingaman, N. P., Tseng, W.-L., Burt, M. A., Gao, Y., & Randall, D.A. (2019) The convection connection: How ocean feedbacks affect tropical mean moisture and MJO propagation. Journal of Geophysical Research Atmospheres, 124, 11,910–11,931. https://doi.org/10. 1029/2019JD031015
+DeMott, C. A., Klingaman, N. P., Tseng, W.-L., Burt, M. A., Gao, Y., & Randall, D.A. (2019) The convection connection: How ocean feedbacks affect tropical mean moisture and MJO propagation. Journal of Geophysical Research Atmospheres, 124, 11,910–11,931. https://doi.org/10.1029/2019JD031015
 
 Donlon, C. J. and the GHRSST-PP Science Team (2005): The Recommended GHRSST-PP Data Processing Specification GDS (version 1 revision 1.6). The GHRSST-PP International Project Office, Exeter, U.K., 245 pp. (available at: http://ghrsst-pp.jrc.it/documents/GDS-v1.6.zip).
 
-Kim, D., J.-S. Kug, and A. H. Sobel (2014),Propagating versus Nonpropagating Madden–Julian Oscillation Events.  J. Climate, 27, 111-125.  doi:10.1175/JCLI-D-13-00084.1.
+Kim, D., J.-S. Kug, and A. H. Sobel (2014),Propagating versus Nonpropagating Madden–Julian Oscillation Events.  J. Climate, 27, 111-125.  doi:10.1175/JCLI-D-13-00084.1 .
 
 
 
