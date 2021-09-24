@@ -7,6 +7,48 @@ A model intercomparison project organized by members of the WGNE MJO Task Force.
 - xarray
 - xESMF
 
+## generate shuffling SST file
+Simple change the User input below accordingly in `sst_shuffle.py` and `python sst_shuffle.py`
+
+`# # User input
+
+# directory with input data
+diri = "/maloney-scratch/joedhsu/proj1/data/sst_locking/"
+
+# input file name.  code assumes full time seires in single file
+fili = "SPCCSM3.TS.daily.0004-0023.nc"
+
+# directory for output data
+diro = "/maloney-scratch/joedhsu/proj1/data/sst_locking/"
+
+#  output filename prefix (usually includes model and/or simulation details)
+Center = "NCAR"
+
+#  output filename prefix (usually includes model and/or simulation details)
+Model = "SPCCSM"
+
+# time coordinate variable name
+timeName = "time" # units should be similar to "days since YYYY-MM-DD" or "hours since YYYY-MM-DD-HH:MM"
+
+# longitude coordinate variable name
+lonName = "lon"
+
+# latitude coordinate variable name
+latName = "lat"
+
+#  surface temperature or equivalent variable name
+varName = "TS"
+
+#  land surface included?  Enter True or False (no quotation marks)
+landData = True
+
+#  skin temperature or foundation temperature?  enter "skin" or "foundation" (inlcude quotes)
+sstType = "skin"
+
+#  number of days per year (typically 365, sometimes 360)
+DaysPerYear = 365 # some models have 360-day years.  Use 365 if Leap Days included`
+
+
 ## 1. Motivation
 Ocean coupling is known to improve MJO simulation in climate models.  This has been noted in many prior studies that have compared MJO simulation skill in fully coupled and atmosphere-only simulations of the same model (e.g., DeMott et al. 2015 and references therein).  Such comparisons are often made between free-running, coupled integrations and uncoupled atmosphere-only simulations forced with observed monthly mean sea surface temperatures (SSTs).  Interpreting the results of these comparisons is complicated because of differences in the SST mean state and the SST low-frequency variability between coupled and uncoupled simulations, and because uncoupled simulations do not include sub-monthly SST variability that is present in the coupled simulation.
 
