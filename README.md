@@ -10,7 +10,8 @@ A model intercomparison project organized by members of the WGNE MJO Task Force.
 ## generate shuffling SST file
 Simple change the User input below accordingly in `sst_shuffle.py` and `python sst_shuffle.py`
 
-`# # User input
+```
+# # User input
 
 # directory with input data
 diri = "/maloney-scratch/joedhsu/proj1/data/sst_locking/"
@@ -46,8 +47,8 @@ landData = True
 sstType = "skin"
 
 #  number of days per year (typically 365, sometimes 360)
-DaysPerYear = 365 # some models have 360-day years.  Use 365 if Leap Days included`
-
+DaysPerYear = 365 # some models have 360-day years.  Use 365 if Leap Days included
+```
 
 ## 1. Motivation
 Ocean coupling is known to improve MJO simulation in climate models.  This has been noted in many prior studies that have compared MJO simulation skill in fully coupled and atmosphere-only simulations of the same model (e.g., DeMott et al. 2015 and references therein).  Such comparisons are often made between free-running, coupled integrations and uncoupled atmosphere-only simulations forced with observed monthly mean sea surface temperatures (SSTs).  Interpreting the results of these comparisons is complicated because of differences in the SST mean state and the SST low-frequency variability between coupled and uncoupled simulations, and because uncoupled simulations do not include sub-monthly SST variability that is present in the coupled simulation.
