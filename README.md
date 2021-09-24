@@ -7,8 +7,8 @@ A model intercomparison project organized by members of the WGNE MJO Task Force.
 - xarray
 - xESMF
 
-## generate shuffling SST file
-Simple change the User input below accordingly in `sst_shuffle.py` and `python sst_shuffle.py`
+## Generate shuffling SST file
+Simple change the User input below accordingly in `sst_shuffle.py` and in the commend line type `python sst_shuffle.py`
 
 ```
 # # User input
