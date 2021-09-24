@@ -3,7 +3,7 @@ import xarray as xr
 
 def ocn_mask(da_var):
 
-    ds_mask = xr.open_dataset('data.nc')
+    ds_mask = xr.open_dataset('oceanmask.nc')
     
     da_allbasin = ds_mask.isel(Z=0).basin
     da_omask = da_allbasin.where(da_allbasin.isnull(),other=1)
