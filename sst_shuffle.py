@@ -370,7 +370,7 @@ cbar.set_label(label='Surface temperature anomaly',size=45, labelpad=15)
 
 
 
-fig.savefig('SST_locking_anom_global.pdf', dpi=300, facecolor='w', edgecolor='w',
+fig.savefig('SST_locking_anom_global.png', dpi=300, facecolor='w', edgecolor='w',
                 orientation='portrait', format=None,
                 transparent=False, bbox_inches="tight", pad_inches=None)
 
