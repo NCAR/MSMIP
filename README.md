@@ -8,7 +8,7 @@ A model intercomparison project organized by members of the WGNE MJO Task Force.
 - xESMF
 
 ## Generate shuffling SST file
-Simple change the User input below accordingly in `sst_shuffle.py` and in the commend line type `python sst_shuffle.py`
+Change the User input showing below accordingly in `sst_shuffle.py` and on the commend line type `python sst_shuffle.py`
 
 ```
 # # User input
