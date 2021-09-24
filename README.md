@@ -47,7 +47,7 @@ As in cloud-locking experiments, SSTAs are shuffled about the same day-of-year (
 
 Generation of monthly mean SST time series is left to individual investigators.
 ![Figure 1](SST_locking_anom_global.png "Figure1")
-Figure 1.  Ten-day time series of SSTA (arranged from top-to-bottom rows) from the coupled simulation, randomized 5-day running chunks of SSTA patterns, daily randomized SSTA patterns, and daily pointwise randomized SSTA (left-to-right columns).
+Figure 1.  Ten-day time series of SSTA (arranged from top-to-bottom rows) from the coupled simulation, daily randomized SSTA patterns, randomized 5-day running chunks of SSTA patterns, and daily pointwise randomized SSTA (left-to-right columns).
 
 ### 2.4 Data output requirements and formats
 We request daily means of several 2D variables on the AGCM native grid.  Variables should be renamed as follows; we do not require full CMOR-compliant output as in the CMIPx repository.
