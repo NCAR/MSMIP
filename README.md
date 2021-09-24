@@ -24,6 +24,7 @@ The MSMIP is designed to answer this question and to understand if the effects o
 MSMIP consists of five model experiments.  The overarching goal is to perform uncoupled experiments that retain the coupled model SST mean state, as well as its low- and high-frequency SST variability, but avoid the erroneous “coincident SST-precipitation” condition that develops in uncoupled models forced with high-frequency SST from the coupled simulation.  To achieve this, we adopt a strategy from cloud-radiation feedback studies known as cloud-locking (e.g., Langen et al. 2012, Mauritsen et al. 2013) wherein simulated radiative heating profiles from a control simulation are randomized in time, and then prescribed in an experimental “cloud-locked” simulation.  In the cloud-locked simulation, the mean state cloud radiative feedbacks are “locked in” to the global energy budget, but their coherent relationship with the clouds themselves is purposefully broken.
 
 In the following, CGCM and AGCM refer to coupled and atmosphere-only general circulation model configurations, respectively.  Suffixes refer to the SST anomaly (SSTA) forcing method in each AGCM simulation.  In all AGCM_x experiments, the input SST is provided by the CGCM simulation.  SSTAs are computed as departures from the low-frequency background state, which includes seasonal-to-interannual variability (i.e., not as departures from the mean annual cycle).  All AGCM_x experiments therefore have identical low-frequency SST variability as the CGCM simulation.
+
 - CGCM:  coupled model that provides daily SST output (e.g., CMIP6 historical simulation)
 - AGCM_mon:  prescribe monthly mean SSTs (remove all higher frequency SST variability)
 - AGCM_1drandpt:  prescribe pointwise randomly shuffled daily SSTA (scramble patterns)
@@ -52,6 +53,7 @@ Figure 1.  Ten-day time series of SSTA (arranged from top-to-bottom rows) from t
 We request daily means of several 2D variables on the AGCM native grid.  Variables should be renamed as follows; we do not require full CMOR-compliant output as in the CMIPx repository.
 
 __Priority daily variables (all are 2D):__
+
 - pr:       total precipitation  (kg m-1 s-2)
 - hfls:     surface latent heat flux (W m-2; positive to atmosphere)
 - hfss:     surface sensible heat flux (W m-2; positive to atmosphere)
@@ -72,6 +74,7 @@ __Priority daily variables (all are 2D):__
 *TS is either 1) surface skin temperature (SKT; preferred; includes land) or SST (only over oceans).
 
 __Optional daily variables (all are 2D 1000-100 hPa vertically integrated quantities; require saving daily 3D u, v, omega, T, q, Z):__
+
 - h:     moist static energy, h=CpT+gz+Lq (J kg-1)
 - hHADV: horizontal advection of h (W m-2)
 - hVADV: vertical advection of h (W m-2)
@@ -80,7 +83,9 @@ __Optional daily variables (all are 2D 1000-100 hPa vertically integrated quanti
 
 __File naming convention:__
 We request a full time series of a single variable per file.  Time series may be broken up into a few separate files if the single time series is much larger than about 2 GB.  The data should be provided in netCDF format.  The file naming convention is:
+
 > `CenterName.ModelName.ExpName.VariableName.YYYYMMDDfirst-YYYYMMDDlast.nc`
+   
    __Where:__
    - CenterName is modeling center name
    - ModelName is the name of the model 
@@ -98,10 +103,12 @@ Data can be uploaded through [Globus](https://www.globus.org/)
 
 ## 3. Assessment
 The effects of ocean-atmosphere coupling, and the effects of SSTA patterns, persistence, and phasing with respect to MJO convection can be assessed through the following comparisons:
+
 - coupling effect:  CGCM - AGCM_mon
 - phasing effect:  CGCM - AGCM_5drandpatt
 - persistence effect:  AGCM_5drandpatt - AGCM_1drandpatt
 - pattern effect:  AGCM_1drandpatt - AGCM_1drandpt
+
 Additional details of the assessment strategy are currently under development, but will include a variety of standard MJO diagnostics and metrics, such as the east-west power ratio, the pattern correlation between observed and modeled precipitation longitude-lag diagram, the MJO MC-crossing metric, and MJO propagation as a function of ENSO state.  Tropical mean state for all requested variables will also be assessed.
 
 ## 4. References
