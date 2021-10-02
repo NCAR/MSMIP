@@ -6,6 +6,8 @@ A model intercomparison project organized by members of the WGNE MJO Task Force.
 - numpy
 - xarray
 - xESMF
+- cartopy
+- matplotlib
 
 ## Generate shuffling SST file
 Change the User input showing below accordingly in `sst_shuffle.py` and on the commend line type `python sst_shuffle.py`
