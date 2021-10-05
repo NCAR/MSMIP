@@ -91,7 +91,7 @@ MSMIP provides example NCL and Python code to do the SSTA randomization.   Rando
 As in cloud-locking experiments, SSTAs are shuffled about the same day-of-year (or 5-day chunk) background state to retain the CGCM mean annual cycle of high-frequency SSTA variance.  For example, in AGCM_1drandpatt, the SSTA patterns for all January 1 days are randomized, then all January 2 SSTA patterns are randomized, etc.  An example of SST shuffling is shown in Fig. 1.  Both the NCL and Python SST shuffling packages will produce a similar plot.
 
 Generation of monthly mean SST time series is left to individual investigators.
-![Figure 1](SST_locking_anom_global.png "Figure1")
+![Figure 1](SST_locking_trop_anom_demo.png "Figure1")
 Figure 1.  Ten-day time series of SSTA (arranged from top-to-bottom rows) from the coupled simulation, daily randomized SSTA patterns, randomized 5-day running chunks of SSTA patterns, and daily pointwise randomized SSTA (left-to-right columns).
 
 ### 2.4 Data output requirements and formats
