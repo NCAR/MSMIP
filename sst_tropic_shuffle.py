@@ -1,11 +1,20 @@
 #!/usr/bin/env python
 # coding: utf-8
 
+"""
+The python script is designed to generate the surface forcing data for the MSMIP.
 
+The surface temperature over the ocean is shuffled for the MSMIP.
+There are total three types of outputs corresponding to different SST
+shuffling pattern including
+1. 1 day spatial pattern
+
+"""
 import xarray as xr
 import numpy as np
 
-
+import warnings
+warnings.simplefilter("ignore")
 
 # # User input
 # directory with input data
@@ -59,6 +68,8 @@ if sstType == "foundation" :
 
 
 # # Land masking
+print('==================================')
+print('create ocean mask based on input data')
 from ocean_mask import ocn_mask
 
 da_omask_regrid = ocn_mask(ds[varName])
@@ -69,6 +80,8 @@ ds['%s_ocn'%varName] = ds[varName]*da_omask_regrid
 
 
 # # Create tropical mask
+print('==================================')
+print('create tropical transition mask for linear combination')
 lat_lim = [25,35]
 
 # tropical only shuffle
@@ -116,7 +129,8 @@ da_original_mask = da_original_mask*da_omask_regrid
 
 # # Calculate background signal
 import lanczos_filter as lf
-
+print('==================================')
+print('calculate background SST signal')
 ds['%s_ocn_mean'%varName] = ds['%s_ocn'%varName].mean(dim=timeName)
 ds['%s_ocn_nomean'%varName] = ds['%s_ocn'%varName]-ds['%s_ocn_mean'%varName]
 ds['%s_ocn_bg'%varName] = lf.lanczos_low_pass(ds['%s_ocn_nomean'%varName], 201, 1/100., dim=timeName,opt='symm')+ds['%s_ocn_mean'%varName]
@@ -139,6 +153,8 @@ newindex_all = np.array(np.append(newindex_all,newindex_list),dtype=int)
 # # Random Pattern
 import random
 
+print('==================================')
+print('create 1 day pattern random shuffle')
 da_randpatt = ds['%s_ocn_anom'%varName].copy()*np.nan
 for i in range(DaysPerYear):
     dayindex = np.copy(newindex_list[i])
@@ -151,7 +167,8 @@ da_randpatt_trop = da_randpatt*da_shuffle_mask+ds['%s_ocn_anom'%varName]*da_orig
 
 
 # # Random single point
-
+print('==================================')
+print('create pointwise random shuffle')
 da_randpt = ds['%s_ocn_anom'%varName].copy()*np.nan
 for i in range(len(ds['%s'%lonName])):
     # print("swapping pointwise on lon index %i"%i)
@@ -167,7 +184,8 @@ da_randpt_trop = da_randpt.where(da_randpt.notnull(),other=0)*da_shuffle_mask+ds
 
 
 # # Random 5days
-
+print('==================================')
+print('create 5days pattern random shuffle')
 da_randpatt5days = ds['%s_ocn_anom'%varName].copy()*np.nan
 for i in range(0,DaysPerYear,5):
     dayindex = np.copy(newindex_list[i])
@@ -181,6 +199,8 @@ da_randpatt5days_trop = da_randpatt5days*da_shuffle_mask+ds['%s_ocn_anom'%varNam
 
 
 # # Putting Land points back
+print('==================================')
+print('put original land surface temperature back')
 ds['RandPatt1d'] = (da_randpatt_trop+ds['%s_ocn_bg'%varName])
 ds['RandPt1d'] = (da_randpt_trop+ds['%s_ocn_bg'%varName])
 ds['RandPatt5d'] = (da_randpatt5days_trop+ds['%s_ocn_bg'%varName])
@@ -196,6 +216,9 @@ if landData :
 
 
 # # Output file
+print('==================================')
+print('output shuffled results...')
+print('location: %s'%diro)
 # CGCM output
 ds_output = xr.Dataset()
 ds_output['TS_CGCM_bg'] = ds['%s_ocn_bg'%varName]
@@ -262,6 +285,9 @@ ds_output.to_netcdf('%s%s.%s.TS.AGCM_1dRandPt_trop.0004-0023.nc'%(diro,Center,Mo
 
 
 # # Demo plots
+print('==================================')
+print('create demo plots...')
+
 import cartopy.mpl.ticker as cticker
 import cartopy.crs as ccrs
 import cartopy.feature as cfeature
@@ -450,7 +476,7 @@ fig.savefig('SST_locking_global_anom_demo.png', dpi=300, facecolor='w', edgecolo
 
 ##############################################################################################
 
-fig = plt.figure(2,figsize=(20,10))
+fig = plt.figure(3,figsize=(20,10))
 devy = 0.5
 dlevel = np.arange(230, 320+0.01, 5)
 timeindex = np.arange(0,10)
@@ -460,11 +486,11 @@ timeindex = np.arange(0,10)
 for nindex,timeindex in enumerate(timeindex):
 
     #### original ####
-    ax2 = fig.add_axes([0,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
+    ax3 = fig.add_axes([0,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
     im = ds['%s'%varName].isel(time=timeindex)\
                .plot.pcolormesh(x='lon',
                             y='lat',
-                            ax=ax2,
+                            ax=ax3,
                             levels=dlevel,
                             extend='both',
                             cmap='hot_r',
@@ -472,39 +498,39 @@ for nindex,timeindex in enumerate(timeindex):
 
     cb=im.colorbar
     cb.remove()
-    ax2.coastlines(resolution='110m',linewidths=0.8)
-#     ax2.add_feature(cfeature.LAND,color='lightgrey')
+    ax3.coastlines(resolution='110m',linewidths=0.8)
+#     ax3.add_feature(cfeature.LAND,color='lightgrey')
 
-    ax2.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
-    ax2.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
-    ax2.set_yticks([-80,-60,-40,-20,0,20,40,60,80], crs=ccrs.PlateCarree())
-    ax2.set_yticklabels([-80,-60,-40,-20,0,20,40,60,80], color='black', weight='bold',size=22)
-    ax2.yaxis.tick_left()
+    ax3.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
+    ax3.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
+    ax3.set_yticks([-80,-60,-40,-20,0,20,40,60,80], crs=ccrs.PlateCarree())
+    ax3.set_yticklabels([-80,-60,-40,-20,0,20,40,60,80], color='black', weight='bold',size=22)
+    ax3.yaxis.tick_left()
 
-    ax2.text(0.02,0.05, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
-             fontsize=24, color='k', weight='bold', transform=ax2.transAxes)
+    ax3.text(0.02,0.05, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
+             fontsize=24, color='k', weight='bold', transform=ax3.transAxes)
 
 
     lon_formatter = cticker.LongitudeFormatter()
     lat_formatter = cticker.LatitudeFormatter()
-    ax2.xaxis.set_major_formatter(lon_formatter)
-    ax2.yaxis.set_major_formatter(lat_formatter)
-#     ax2.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
+    ax3.xaxis.set_major_formatter(lon_formatter)
+    ax3.yaxis.set_major_formatter(lat_formatter)
+#     ax3.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
+    ax3.set_xlabel('')
+    ax3.set_ylabel('')
     if nindex == 0:
-        ax2.set_title('Original anomaly', color='black', weight='bold',size=35,pad=20)
+        ax3.set_title('Original anomaly', color='black', weight='bold',size=35,pad=20)
     else:
-        ax2.set_title('', color='black', weight='bold',size=35,pad=20)
-#     ax2.set_aspect('auto')
+        ax3.set_title('', color='black', weight='bold',size=35,pad=20)
+#     ax3.set_aspect('auto')
 
 
     #### random pattern ####
-    ax2 = fig.add_axes([0+0.55,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
+    ax3 = fig.add_axes([0+0.55,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
     im = ds['RandPatt1d'].isel(time=timeindex)\
                .plot.pcolormesh(x='lon',
                             y='lat',
-                            ax=ax2,
+                            ax=ax3,
                             levels=dlevel,
                             extend='both',
                             cmap='hot_r',
@@ -512,38 +538,38 @@ for nindex,timeindex in enumerate(timeindex):
 
     cb=im.colorbar
     cb.remove()
-    ax2.coastlines(resolution='110m',linewidths=0.8)
-#     ax2.add_feature(cfeature.LAND,color='lightgrey')
+    ax3.coastlines(resolution='110m',linewidths=0.8)
+#     ax3.add_feature(cfeature.LAND,color='lightgrey')
 
-    ax2.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
-    ax2.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
-    ax2.set_yticks([-80,-60,-40,-20,0,20,40,60,80], crs=ccrs.PlateCarree())
-    ax2.set_yticklabels([-80,-60,-40,-20,0,20,40,60,80], color='black', weight='bold',size=22)
-    ax2.yaxis.tick_left()
+    ax3.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
+    ax3.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
+    ax3.set_yticks([-80,-60,-40,-20,0,20,40,60,80], crs=ccrs.PlateCarree())
+    ax3.set_yticklabels([-80,-60,-40,-20,0,20,40,60,80], color='black', weight='bold',size=22)
+    ax3.yaxis.tick_left()
 
-    ax2.text(0.02,0.05, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
-             fontsize=24, color='k', weight='bold', transform=ax2.transAxes)
+    ax3.text(0.02,0.05, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
+             fontsize=24, color='k', weight='bold', transform=ax3.transAxes)
 
 
     lon_formatter = cticker.LongitudeFormatter()
     lat_formatter = cticker.LatitudeFormatter()
-    ax2.xaxis.set_major_formatter(lon_formatter)
-    ax2.yaxis.set_major_formatter(lat_formatter)
-#     ax2.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
+    ax3.xaxis.set_major_formatter(lon_formatter)
+    ax3.yaxis.set_major_formatter(lat_formatter)
+#     ax3.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
+    ax3.set_xlabel('')
+    ax3.set_ylabel('')
     if nindex == 0:
-        ax2.set_title('Random pattern', color='black', weight='bold',size=35,pad=20)
+        ax3.set_title('Random pattern', color='black', weight='bold',size=35,pad=20)
     else:
-        ax2.set_title('', color='black', weight='bold',size=35,pad=20)
-#     ax2.set_aspect('auto')
+        ax3.set_title('', color='black', weight='bold',size=35,pad=20)
+#     ax3.set_aspect('auto')
 
     #### random pattern 5days ####
-    ax2 = fig.add_axes([0+0.55*2,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
+    ax3 = fig.add_axes([0+0.55*2,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
     im = ds['RandPatt5d'].isel(time=timeindex)\
                .plot.pcolormesh(x='lon',
                             y='lat',
-                            ax=ax2,
+                            ax=ax3,
                             levels=dlevel,
                             extend='both',
                             cmap='hot_r',
@@ -551,38 +577,38 @@ for nindex,timeindex in enumerate(timeindex):
 
     cb=im.colorbar
     cb.remove()
-    ax2.coastlines(resolution='110m',linewidths=0.8)
-#     ax2.add_feature(cfeature.LAND,color='lightgrey')
+    ax3.coastlines(resolution='110m',linewidths=0.8)
+#     ax3.add_feature(cfeature.LAND,color='lightgrey')
 
-    ax2.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
-    ax2.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
-    ax2.set_yticks([-80,-60,-40,-20,0,20,40,60,80], crs=ccrs.PlateCarree())
-    ax2.set_yticklabels([-80,-60,-40,-20,0,20,40,60,80], color='black', weight='bold',size=22)
-    ax2.yaxis.tick_left()
+    ax3.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
+    ax3.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
+    ax3.set_yticks([-80,-60,-40,-20,0,20,40,60,80], crs=ccrs.PlateCarree())
+    ax3.set_yticklabels([-80,-60,-40,-20,0,20,40,60,80], color='black', weight='bold',size=22)
+    ax3.yaxis.tick_left()
 
-    ax2.text(0.02,0.05, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
-             fontsize=24, color='k', weight='bold', transform=ax2.transAxes)
+    ax3.text(0.02,0.05, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
+             fontsize=24, color='k', weight='bold', transform=ax3.transAxes)
 
 
     lon_formatter = cticker.LongitudeFormatter()
     lat_formatter = cticker.LatitudeFormatter()
-    ax2.xaxis.set_major_formatter(lon_formatter)
-    ax2.yaxis.set_major_formatter(lat_formatter)
-#     ax2.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
+    ax3.xaxis.set_major_formatter(lon_formatter)
+    ax3.yaxis.set_major_formatter(lat_formatter)
+#     ax3.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
+    ax3.set_xlabel('')
+    ax3.set_ylabel('')
     if nindex == 0:
-        ax2.set_title('Random pattern 5days', color='black', weight='bold',size=35,pad=20)
+        ax3.set_title('Random pattern 5days', color='black', weight='bold',size=35,pad=20)
     else:
-        ax2.set_title('', color='black', weight='bold',size=35,pad=20)
-#     ax2.set_aspect('auto')
+        ax3.set_title('', color='black', weight='bold',size=35,pad=20)
+#     ax3.set_aspect('auto')
 
     #### random pointwise ####
-    ax2 = fig.add_axes([0+0.55*3,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
+    ax3 = fig.add_axes([0+0.55*3,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
     im = ds['RandPt1d'].isel(time=timeindex)\
                .plot.pcolormesh(x='lon',
                             y='lat',
-                            ax=ax2,
+                            ax=ax3,
                             levels=dlevel,
                             extend='both',
                             cmap='hot_r',
@@ -590,31 +616,31 @@ for nindex,timeindex in enumerate(timeindex):
 
     cb=im.colorbar
     cb.remove()
-    ax2.coastlines(resolution='110m',linewidths=0.8)
-#     ax2.add_feature(cfeature.LAND,color='lightgrey')
+    ax3.coastlines(resolution='110m',linewidths=0.8)
+#     ax3.add_feature(cfeature.LAND,color='lightgrey')
 
-    ax2.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
-    ax2.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
-    ax2.set_yticks([-80,-60,-40,-20,0,20,40,60,80], crs=ccrs.PlateCarree())
-    ax2.set_yticklabels([-80,-60,-40,-20,0,20,40,60,80], color='black', weight='bold',size=22)
-    ax2.yaxis.tick_left()
+    ax3.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
+    ax3.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
+    ax3.set_yticks([-80,-60,-40,-20,0,20,40,60,80], crs=ccrs.PlateCarree())
+    ax3.set_yticklabels([-80,-60,-40,-20,0,20,40,60,80], color='black', weight='bold',size=22)
+    ax3.yaxis.tick_left()
 
-    ax2.text(0.02,0.05, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
-             fontsize=24, color='k', weight='bold', transform=ax2.transAxes)
+    ax3.text(0.02,0.05, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
+             fontsize=24, color='k', weight='bold', transform=ax3.transAxes)
 
 
     lon_formatter = cticker.LongitudeFormatter()
     lat_formatter = cticker.LatitudeFormatter()
-    ax2.xaxis.set_major_formatter(lon_formatter)
-    ax2.yaxis.set_major_formatter(lat_formatter)
-#     ax2.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
+    ax3.xaxis.set_major_formatter(lon_formatter)
+    ax3.yaxis.set_major_formatter(lat_formatter)
+#     ax3.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
+    ax3.set_xlabel('')
+    ax3.set_ylabel('')
     if nindex == 0:
-        ax2.set_title('Random pointwise', color='black', weight='bold',size=35,pad=20)
+        ax3.set_title('Random pointwise', color='black', weight='bold',size=35,pad=20)
     else:
-        ax2.set_title('', color='black', weight='bold',size=35,pad=20)
-#     ax2.set_aspect('auto')
+        ax3.set_title('', color='black', weight='bold',size=35,pad=20)
+#     ax3.set_aspect('auto')
 
 
 
@@ -634,7 +660,7 @@ fig.savefig('SST_locking_global_total_demo.png', dpi=300, facecolor='w', edgecol
 
 ##############################################################################################
 
-fig = plt.figure(2,figsize=(20,10))
+fig = plt.figure(4,figsize=(20,10))
 devy = 0.5
 dlevel = np.arange(-1, 1+0.01, 0.1)
 timeindex = np.arange(0,10)
@@ -644,11 +670,11 @@ timeindex = np.arange(0,10)
 for nindex,timeindex in enumerate(timeindex):
 
     #### original ####
-    ax2 = fig.add_axes([0,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
+    ax4 = fig.add_axes([0,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
     im = ds['%s_ocn_anom'%varName].where((da_omask_regrid.lat>-40)&(da_omask_regrid.lat<40),drop=True).isel(time=timeindex)\
                .plot.pcolormesh(x='lon',
                             y='lat',
-                            ax=ax2,
+                            ax=ax4,
                             levels=dlevel,
                             extend='both',
                             cmap='RdBu_r',
@@ -656,39 +682,39 @@ for nindex,timeindex in enumerate(timeindex):
 
     cb=im.colorbar
     cb.remove()
-    ax2.coastlines(resolution='110m',linewidths=0.8)
-    ax2.add_feature(cfeature.LAND,color='lightgrey')
+    ax4.coastlines(resolution='110m',linewidths=0.8)
+    ax4.add_feature(cfeature.LAND,color='lightgrey')
 
-    ax2.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
-    ax2.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
-    ax2.set_yticks([-30,-20,-10,0,10,20,30], crs=ccrs.PlateCarree())
-    ax2.set_yticklabels([-30,-20,-10,0,10,20,30], color='black', weight='bold',size=22)
-    ax2.yaxis.tick_left()
+    ax4.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
+    ax4.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
+    ax4.set_yticks([-30,-20,-10,0,10,20,30], crs=ccrs.PlateCarree())
+    ax4.set_yticklabels([-30,-20,-10,0,10,20,30], color='black', weight='bold',size=22)
+    ax4.yaxis.tick_left()
 
-    ax2.text(0.02,0.9, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
-             fontsize=24, color='k', weight='bold', transform=ax2.transAxes)
+    ax4.text(0.02,0.9, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
+             fontsize=24, color='k', weight='bold', transform=ax4.transAxes)
 
 
     lon_formatter = cticker.LongitudeFormatter()
     lat_formatter = cticker.LatitudeFormatter()
-    ax2.xaxis.set_major_formatter(lon_formatter)
-    ax2.yaxis.set_major_formatter(lat_formatter)
-#     ax2.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
+    ax4.xaxis.set_major_formatter(lon_formatter)
+    ax4.yaxis.set_major_formatter(lat_formatter)
+#     ax4.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
+    ax4.set_xlabel('')
+    ax4.set_ylabel('')
     if nindex == 0:
-        ax2.set_title('Original anomaly', color='black', weight='bold',size=35,pad=20)
+        ax4.set_title('Original anomaly', color='black', weight='bold',size=35,pad=20)
     else:
-        ax2.set_title('', color='black', weight='bold',size=35,pad=20)
-#     ax2.set_aspect('auto')
+        ax4.set_title('', color='black', weight='bold',size=35,pad=20)
+#     ax4.set_aspect('auto')
 
 
     #### random pattern ####
-    ax2 = fig.add_axes([0+1,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
+    ax4 = fig.add_axes([0+1,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
     im = da_randpatt_trop.where((da_omask_regrid.lat>-40)&(da_omask_regrid.lat<40),drop=True).isel(time=timeindex)\
                .plot.pcolormesh(x='lon',
                             y='lat',
-                            ax=ax2,
+                            ax=ax4,
                             levels=dlevel,
                             extend='both',
                             cmap='RdBu_r',
@@ -696,38 +722,38 @@ for nindex,timeindex in enumerate(timeindex):
 
     cb=im.colorbar
     cb.remove()
-    ax2.coastlines(resolution='110m',linewidths=0.8)
-    ax2.add_feature(cfeature.LAND,color='lightgrey')
+    ax4.coastlines(resolution='110m',linewidths=0.8)
+    ax4.add_feature(cfeature.LAND,color='lightgrey')
 
-    ax2.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
-    ax2.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
-    ax2.set_yticks([-30,-20,-10,0,10,20,30], crs=ccrs.PlateCarree())
-    ax2.set_yticklabels([-30,-20,-10,0,10,20,30], color='black', weight='bold',size=22)
-    ax2.yaxis.tick_left()
+    ax4.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
+    ax4.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
+    ax4.set_yticks([-30,-20,-10,0,10,20,30], crs=ccrs.PlateCarree())
+    ax4.set_yticklabels([-30,-20,-10,0,10,20,30], color='black', weight='bold',size=22)
+    ax4.yaxis.tick_left()
 
-    ax2.text(0.02,0.9, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
-             fontsize=24, color='k', weight='bold', transform=ax2.transAxes)
+    ax4.text(0.02,0.9, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
+             fontsize=24, color='k', weight='bold', transform=ax4.transAxes)
 
 
     lon_formatter = cticker.LongitudeFormatter()
     lat_formatter = cticker.LatitudeFormatter()
-    ax2.xaxis.set_major_formatter(lon_formatter)
-    ax2.yaxis.set_major_formatter(lat_formatter)
-#     ax2.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
+    ax4.xaxis.set_major_formatter(lon_formatter)
+    ax4.yaxis.set_major_formatter(lat_formatter)
+#     ax4.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
+    ax4.set_xlabel('')
+    ax4.set_ylabel('')
     if nindex == 0:
-        ax2.set_title('Random pattern', color='black', weight='bold',size=35,pad=20)
+        ax4.set_title('Random pattern', color='black', weight='bold',size=35,pad=20)
     else:
-        ax2.set_title('', color='black', weight='bold',size=35,pad=20)
-#     ax2.set_aspect('auto')
+        ax4.set_title('', color='black', weight='bold',size=35,pad=20)
+#     ax4.set_aspect('auto')
 
     #### random pattern 5days ####
-    ax2 = fig.add_axes([0+1*2,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
+    ax4 = fig.add_axes([0+1*2,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
     im = da_randpatt5days_trop.where((da_omask_regrid.lat>-40)&(da_omask_regrid.lat<40),drop=True).isel(time=timeindex)\
                .plot.pcolormesh(x='lon',
                             y='lat',
-                            ax=ax2,
+                            ax=ax4,
                             levels=dlevel,
                             extend='both',
                             cmap='RdBu_r',
@@ -735,38 +761,38 @@ for nindex,timeindex in enumerate(timeindex):
 
     cb=im.colorbar
     cb.remove()
-    ax2.coastlines(resolution='110m',linewidths=0.8)
-    ax2.add_feature(cfeature.LAND,color='lightgrey')
+    ax4.coastlines(resolution='110m',linewidths=0.8)
+    ax4.add_feature(cfeature.LAND,color='lightgrey')
 
-    ax2.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
-    ax2.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
-    ax2.set_yticks([-30,-20,-10,0,10,20,30], crs=ccrs.PlateCarree())
-    ax2.set_yticklabels([-30,-20,-10,0,10,20,30], color='black', weight='bold',size=22)
-    ax2.yaxis.tick_left()
+    ax4.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
+    ax4.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
+    ax4.set_yticks([-30,-20,-10,0,10,20,30], crs=ccrs.PlateCarree())
+    ax4.set_yticklabels([-30,-20,-10,0,10,20,30], color='black', weight='bold',size=22)
+    ax4.yaxis.tick_left()
 
-    ax2.text(0.02,0.9, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
-             fontsize=24, color='k', weight='bold', transform=ax2.transAxes)
+    ax4.text(0.02,0.9, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
+             fontsize=24, color='k', weight='bold', transform=ax4.transAxes)
 
 
     lon_formatter = cticker.LongitudeFormatter()
     lat_formatter = cticker.LatitudeFormatter()
-    ax2.xaxis.set_major_formatter(lon_formatter)
-    ax2.yaxis.set_major_formatter(lat_formatter)
-#     ax2.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
+    ax4.xaxis.set_major_formatter(lon_formatter)
+    ax4.yaxis.set_major_formatter(lat_formatter)
+#     ax4.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
+    ax4.set_xlabel('')
+    ax4.set_ylabel('')
     if nindex == 0:
-        ax2.set_title('Random pattern 5days', color='black', weight='bold',size=35,pad=20)
+        ax4.set_title('Random pattern 5days', color='black', weight='bold',size=35,pad=20)
     else:
-        ax2.set_title('', color='black', weight='bold',size=35,pad=20)
-#     ax2.set_aspect('auto')
+        ax4.set_title('', color='black', weight='bold',size=35,pad=20)
+#     ax4.set_aspect('auto')
 
     #### random pointwise ####
-    ax2 = fig.add_axes([0+1*3,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
+    ax4 = fig.add_axes([0+1*3,0-nindex*devy-0.4,1,0.4],projection=ccrs.PlateCarree(central_longitude=180))
     im = da_randpt_trop.where((da_omask_regrid.lat>-40)&(da_omask_regrid.lat<40),drop=True).isel(time=timeindex)\
                .plot.pcolormesh(x='lon',
                             y='lat',
-                            ax=ax2,
+                            ax=ax4,
                             levels=dlevel,
                             extend='both',
                             cmap='RdBu_r',
@@ -774,31 +800,31 @@ for nindex,timeindex in enumerate(timeindex):
 
     cb=im.colorbar
     cb.remove()
-    ax2.coastlines(resolution='110m',linewidths=0.8)
-    ax2.add_feature(cfeature.LAND,color='lightgrey')
+    ax4.coastlines(resolution='110m',linewidths=0.8)
+    ax4.add_feature(cfeature.LAND,color='lightgrey')
 
-    ax2.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
-    ax2.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
-    ax2.set_yticks([-30,-20,-10,0,10,20,30], crs=ccrs.PlateCarree())
-    ax2.set_yticklabels([-30,-20,-10,0,10,20,30], color='black', weight='bold',size=22)
-    ax2.yaxis.tick_left()
+    ax4.set_xticks([60,120,180,240,300], crs=ccrs.PlateCarree())
+    ax4.set_xticklabels([60,120,180,-120,-60], color='black', weight='bold',size=22)
+    ax4.set_yticks([-30,-20,-10,0,10,20,30], crs=ccrs.PlateCarree())
+    ax4.set_yticklabels([-30,-20,-10,0,10,20,30], color='black', weight='bold',size=22)
+    ax4.yaxis.tick_left()
 
-    ax2.text(0.02,0.9, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
-             fontsize=24, color='k', weight='bold', transform=ax2.transAxes)
+    ax4.text(0.02,0.9, 'Time = %s'%ds['%s_ocn_anom'%varName].time.isel(time=timeindex).values,
+             fontsize=24, color='k', weight='bold', transform=ax4.transAxes)
 
 
     lon_formatter = cticker.LongitudeFormatter()
     lat_formatter = cticker.LatitudeFormatter()
-    ax2.xaxis.set_major_formatter(lon_formatter)
-    ax2.yaxis.set_major_formatter(lat_formatter)
-#     ax2.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
-    ax2.set_xlabel('')
-    ax2.set_ylabel('')
+    ax4.xaxis.set_major_formatter(lon_formatter)
+    ax4.yaxis.set_major_formatter(lat_formatter)
+#     ax4.grid(linewidth=2, color='black', alpha=0.3, linestyle='--')
+    ax4.set_xlabel('')
+    ax4.set_ylabel('')
     if nindex == 0:
-        ax2.set_title('Random pointwise', color='black', weight='bold',size=35,pad=20)
+        ax4.set_title('Random pointwise', color='black', weight='bold',size=35,pad=20)
     else:
-        ax2.set_title('', color='black', weight='bold',size=35,pad=20)
-#     ax2.set_aspect('auto')
+        ax4.set_title('', color='black', weight='bold',size=35,pad=20)
+#     ax4.set_aspect('auto')
 
 
 
