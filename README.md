@@ -10,11 +10,10 @@ A model intercomparison project organized by members of the WGNE MJO Task Force.
 - matplotlib
 
 ## Generate shuffling SST file
-Change the User input showing below accordingly in `sst_shuffle.py` and on the commend line type `python sst_shuffle.py`
+Change the User input showing below accordingly in `sst_tropic_shuffle.py` and on the commend line type `python sst_tropic_shuffle.py`
 
 ```
 # # User input
-
 # directory with input data
 diri = "/maloney-scratch/joedhsu/proj1/data/sst_locking/"
 
@@ -29,6 +28,9 @@ Center = "NCAR"
 
 #  output filename prefix (usually includes model and/or simulation details)
 Model = "SPCCSM"
+
+#  file suffix (user-specified; can include date range or other info)
+fSuffix = "0004-0023" # i.e., "1980-2010", "1980-2010.HiEntrain", etc.
 
 # time coordinate variable name
 timeName = "time" # units should be similar to "days since YYYY-MM-DD" or "hours since YYYY-MM-DD-HH:MM"
