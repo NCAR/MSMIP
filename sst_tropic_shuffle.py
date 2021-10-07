@@ -7,7 +7,19 @@ The python script is designed to generate the surface forcing data for the MSMIP
 The surface temperature over the ocean is shuffled for the MSMIP.
 There are total three types of outputs corresponding to different SST
 shuffling pattern including
-1. 1 day spatial pattern
+
+1. 1 day spatial pattern shuffle
+2. 5 days chunck spatial pattenr shuffle
+3. pointwise shuffle
+
+To confined the shuffling result in only the tropical region and 
+avoid the discontinuity of sharp difference between shuffled tropic
+and unshuffled extratropics. We impliment blending region in 25-35N/S 
+zone. The idea is to keep 
+- poleward of 35N/S, SSTAs will be identical to those from the coupled model
+- equatorward of 25N/S, SSTAs will be shuffled
+- from 35S-25S and 25N-35N, SSTAs will be a blend of coupled and shuffled
+
 
 """
 import xarray as xr
@@ -31,6 +43,9 @@ Center = "NCAR"
 
 #  output filename prefix (usually includes model and/or simulation details)
 Model = "SPCCSM"
+
+#  file suffix (user-specified; can include date range or other info)
+fSuffix = "0004-0023" # i.e., "1980-2010", "1980-2010.HiEntrain", etc.
 
 # time coordinate variable name
 timeName = "time" # units should be similar to "days since YYYY-MM-DD" or "hours since YYYY-MM-DD-HH:MM"
@@ -82,47 +97,70 @@ ds['%s_ocn'%varName] = ds[varName]*da_omask_regrid
 # # Create tropical mask
 print('==================================')
 print('create tropical transition mask for linear combination')
-lat_lim = [25,35]
+LatBlend = 30. # latitude where final SSTA = 0.5*shuffled + 0.5*original
+deltaLat = 5.  # half width of latitude band where SSTAs are interpolated
+                # i.e., for LatBlend=30 and deltaLat=5, shuffled and orignal
+                # SSTAs are blended from 25N-35N and from 25S-35S.
+        
+lat_lim = [LatBlend-deltaLat,LatBlend+deltaLat]
 
 # tropical only shuffle
 da_shuffle_mask = da_omask_regrid.copy()
 da_original_mask = da_omask_regrid.copy()
 
 # shuffled mask (linear 1-0 in 25S~35S zone)
-tran_lat = da_shuffle_mask.lat.where((da_shuffle_mask.lat<=-np.min(lat_lim))&(da_shuffle_mask.lat>=-np.max(lat_lim)),drop=True).values
+tran_lat = (da_shuffle_mask.lat.where((da_shuffle_mask.lat<=-np.min(lat_lim))&
+                                      (da_shuffle_mask.lat>=-np.max(lat_lim)),
+                                      drop=True).values
+           )
 ntran_lat = len(tran_lat)
 tran_value = np.linspace(0,1,ntran_lat)
 for i in range(ntran_lat):
     da_shuffle_mask.loc[dict(lat = tran_lat[i])] = tran_value[i]
 
 # shuffled mask (linear 1-0 in 25N~35N zone)
-tran_lat = da_shuffle_mask.lat.where((da_shuffle_mask.lat>=np.min(lat_lim))&(da_shuffle_mask.lat<=np.max(lat_lim)),drop=True).values
+tran_lat = (da_shuffle_mask.lat.where((da_shuffle_mask.lat>=np.min(lat_lim))&
+                                      (da_shuffle_mask.lat<=np.max(lat_lim)),
+                                      drop=True).values
+           )
 ntran_lat = len(tran_lat)
 tran_value = np.linspace(0,1,ntran_lat)
 for i in range(ntran_lat):
     da_shuffle_mask.loc[dict(lat = tran_lat[i])] = tran_value[-i-1]
 
 # shuffled mask (0 for north of 35 and south of 35S)
-da_shuffle_mask = xr.where((da_shuffle_mask.lat>np.max(lat_lim))|(da_original_mask.lat<-np.max(lat_lim)),0,da_shuffle_mask)
+da_shuffle_mask = (xr.where((da_shuffle_mask.lat>np.max(lat_lim))|
+                            (da_original_mask.lat<-np.max(lat_lim)),
+                            0,da_shuffle_mask)
+                  )
 da_shuffle_mask = da_shuffle_mask*da_omask_regrid
 
 
 # original mask (linear 0-1 in 25S-35S zone)
-tran_lat = da_original_mask.lat.where((da_original_mask.lat<=-np.min(lat_lim))&(da_original_mask.lat>=-np.max(lat_lim)),drop=True).values
+tran_lat = (da_original_mask.lat.where((da_original_mask.lat<=-np.min(lat_lim))&
+                                       (da_original_mask.lat>=-np.max(lat_lim)),
+                                       drop=True).values
+           )
 ntran_lat = len(tran_lat)
 tran_value = np.linspace(0,1,ntran_lat)
 for i in range(ntran_lat):
     da_original_mask.loc[dict(lat = tran_lat[i])] = tran_value[-i-1]
 
 # original mask (linear 0-1 in 25N-35N zone)
-tran_lat = da_original_mask.lat.where((da_original_mask.lat>=np.min(lat_lim))&(da_original_mask.lat<=np.max(lat_lim)),drop=True).values
+tran_lat = (da_original_mask.lat.where((da_original_mask.lat>=np.min(lat_lim))&
+                                       (da_original_mask.lat<=np.max(lat_lim)),
+                                       drop=True).values
+           )
 ntran_lat = len(tran_lat)
 tran_value = np.linspace(0,1,ntran_lat)
 for i in range(ntran_lat):
     da_original_mask.loc[dict(lat = tran_lat[i])] = tran_value[i]
 
 # shuffled mask (0 in 25N~25S)
-da_original_mask = xr.where((da_original_mask.lat<np.min(lat_lim))&(da_original_mask.lat>-np.min(lat_lim)),0,da_original_mask)
+da_original_mask = (xr.where((da_original_mask.lat<np.min(lat_lim))&
+                             (da_original_mask.lat>-np.min(lat_lim)),
+                             0,da_original_mask)
+                   )
 da_original_mask = da_original_mask*da_omask_regrid
 
 
@@ -133,7 +171,11 @@ print('==================================')
 print('calculate background SST signal')
 ds['%s_ocn_mean'%varName] = ds['%s_ocn'%varName].mean(dim=timeName)
 ds['%s_ocn_nomean'%varName] = ds['%s_ocn'%varName]-ds['%s_ocn_mean'%varName]
-ds['%s_ocn_bg'%varName] = lf.lanczos_low_pass(ds['%s_ocn_nomean'%varName], 201, 1/100., dim=timeName,opt='symm')+ds['%s_ocn_mean'%varName]
+ds['%s_ocn_bg'%varName] = lf.lanczos_low_pass(ds['%s_ocn_nomean'%varName], 
+                                              201, 
+                                              1/100., 
+                                              dim=timeName,
+                                              opt='symm')+ds['%s_ocn_mean'%varName]
 ds['%s_ocn_anom'%varName] = ds['%s_ocn'%varName]-ds['%s_ocn_bg'%varName]
 
 
@@ -173,14 +215,18 @@ da_randpt = ds['%s_ocn_anom'%varName].copy()*np.nan
 for i in range(len(ds['%s'%lonName])):
     # print("swapping pointwise on lon index %i"%i)
     for j in range(len(ds['%s'%latName])):
-        if da_omask_regrid[j,i].notnull() and (ds['%s'%latName][j]>-np.max(lat_lim)) and (ds['%s'%latName][j]<np.max(lat_lim)) :
+        if da_omask_regrid[j,i].notnull() and\
+           (ds['%s'%latName][j]>-np.max(lat_lim)) and\
+           (ds['%s'%latName][j]<np.max(lat_lim)) :
             for ii in range(DaysPerYear):
                 dayindex = np.copy(newindex_list[ii])
                 random.shuffle(dayindex)
                 da_randpt[j,i,newindex_list[ii]] = ds['%s_ocn_anom'%varName][j,i,dayindex].values
 
 # linear combination of original and random pointwise
-da_randpt_trop = da_randpt.where(da_randpt.notnull(),other=0)*da_shuffle_mask+ds['%s_ocn_anom'%varName]*da_original_mask
+da_randpt_trop = (da_randpt.where(da_randpt.notnull(),other=0)*da_shuffle_mask+
+                  ds['%s_ocn_anom'%varName]*da_original_mask
+                 )
 
 
 # # Random 5days
@@ -191,7 +237,8 @@ for i in range(0,DaysPerYear,5):
     dayindex = np.copy(newindex_list[i])
     random.shuffle(dayindex)
     for newind,oldind in enumerate(dayindex):
-        da_randpatt5days[:,:,newindex_list[i][newind]:newindex_list[i][newind]+5] = ds['%s_ocn_anom'%varName][:,:,oldind:oldind+5].values
+        da_randpatt5days[:,:,newindex_list[i][newind]:newindex_list[i][newind]+5] = \
+        ds['%s_ocn_anom'%varName][:,:,oldind:oldind+5].values
 
 # linear combination of original and random pattern 5days
 da_randpatt5days_trop = da_randpatt5days*da_shuffle_mask+ds['%s_ocn_anom'%varName]*da_original_mask
@@ -233,7 +280,7 @@ ds_output['TS_CGCM'] = ds['%s'%varName]
 ds_output['TS_CGCM'].attrs["long_name"] = 'Orignal Surface temperature (radiative)'
 ds_output['TS_CGCM'].attrs["units"] = 'K'
 
-ds_output.to_netcdf('%s%s.%s.TS.CGCM.0004-0023.nc'%(diro,Center,Model))
+ds_output.to_netcdf('%s%s.%s.TS.LatBlend_%i.CGCM.%s.nc'%(diro,Center,Model,LatBlend,fSuffix))
 
 # AGCM_1dRandPatt
 ds_output = xr.Dataset()
@@ -249,7 +296,7 @@ ds_output['TS_AGCM_1dRandPatt'] = ds['RandPatt1d']
 ds_output['TS_AGCM_1dRandPatt'].attrs["long_name"] = 'Pattern randomize SSTA + Original SST background + Original land surface temperature'
 ds_output['TS_AGCM_1dRandPatt'].attrs["units"] = 'K'
 
-ds_output.to_netcdf('%s%s.%s.TS.AGCM_1dRandPatt_trop.0004-0023.nc'%(diro,Center,Model))
+ds_output.to_netcdf('%s%s.%s.TS.LatBlend_%i.AGCM_1dRandPatt.%s.nc'%(diro,Center,Model,LatBlend,fSuffix))
 
 # AGCM_5dRandPatt
 ds_output = xr.Dataset()
@@ -265,7 +312,7 @@ ds_output['TS_AGCM_5dRandPatt'] = ds['RandPatt5d']
 ds_output['TS_AGCM_5dRandPatt'].attrs["long_name"] = '5days Pattern randomize SSTA + Original SST background + Original land surface temperature'
 ds_output['TS_AGCM_5dRandPatt'].attrs["units"] = 'K'
 
-ds_output.to_netcdf('%s%s.%s.TS.AGCM_5dRandPatt_trop.0004-0023.nc'%(diro,Center,Model))
+ds_output.to_netcdf('%s%s.%s.TS.LatBlend_%i.AGCM_5dRandPatt.%s.nc'%(diro,Center,Model,LatBlend,fSuffix))
 
 # AGCM_1dRandPt
 ds_output = xr.Dataset()
@@ -281,7 +328,7 @@ ds_output['TS_AGCM_1dRandPt'] = ds['RandPt1d']
 ds_output['TS_AGCM_1dRandPt'].attrs["long_name"] = 'Pointwise randomize SSTA + Original SST background + Original land surface temperature'
 ds_output['TS_AGCM_1dRandPt'].attrs["units"] = 'K'
 
-ds_output.to_netcdf('%s%s.%s.TS.AGCM_1dRandPt_trop.0004-0023.nc'%(diro,Center,Model))
+ds_output.to_netcdf('%s%s.%s.TS.LatBlend_%i.AGCM_1dRandPt.%s.nc'%(diro,Center,Model,LatBlend,fSuffix))
 
 
 # # Demo plots
