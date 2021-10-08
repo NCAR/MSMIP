@@ -22,6 +22,7 @@ def lanczos_low_pass_weights(window, cutoff):
     w[n] = 2 * cutoff
     k = np.arange(1., n)
     sigma = np.sin(np.pi * k / n) * n / (np.pi * k)
+#     sigma = 1.   # edit for testing to match with Charlotte ncl code
     firstfactor = np.sin(2. * np.pi * cutoff * k) / (np.pi * k)
     w[n-1:0:-1] = firstfactor * sigma
     w[n+1:-1] = firstfactor * sigma
@@ -35,17 +36,30 @@ def lanczos_low_pass(da_ts, window, cutoff, dim='time', opt='symm'):
     if opt == 'symm':
         # create symmetric front 
         da_ts = da_ts.transpose('lat','lon','time')
-        da_front = xr.DataArray(da_ts.loc[dict(time=slice("%0.4i-01-01"%da_ts['time.year'][0],"%0.4i-12-31"%da_ts['time.year'][0]))].values,
+        da_front = (xr.DataArray(da_ts.loc[
+                                    dict(time=slice("%0.4i-01-01"%da_ts['time.year'][0],
+                                                    "%0.4i-12-31"%da_ts['time.year'][0]))].values,
                                 dims=['lat','lon','time'],
-                                coords=dict(lat=da_ts.lat.values,lon=da_ts.lon.values,
-                                            time=da_ts.loc[dict(time=slice("%0.4i-01-01"%da_ts['time.year'][0],"%0.4i-12-31"%da_ts['time.year'][0]))].time.values-datetime.timedelta(days=365)))
+                                coords=dict(lat=da_ts.lat.values,
+                                            lon=da_ts.lon.values,
+                                            time=da_ts.loc[
+                                                dict(time=slice("%0.4i-01-01"%da_ts['time.year'][0],
+                                                                "%0.4i-12-31"%da_ts['time.year'][0]))].time.values
+                                                                -datetime.timedelta(days=365)))
+                   )
         da_front = da_front.reindex(time=list(reversed(da_front.time.values)))
         
         # create symmetric end
-        da_end = xr.DataArray(da_ts.loc[dict(time=slice("%0.4i-01-01"%da_ts['time.year'][-1],"%0.4i-12-31"%da_ts['time.year'][-1]))].values,
+        da_end = (xr.DataArray(da_ts.loc[
+                                  dict(time=slice("%0.4i-01-01"%da_ts['time.year'][-1],
+                                                  "%0.4i-12-31"%da_ts['time.year'][-1]))].values,
                                 dims=['lat','lon','time'],
                                 coords=dict(lat=da_ts.lat.values,lon=da_ts.lon.values,
-                                            time=da_ts.loc[dict(time=slice("%0.4i-01-01"%da_ts['time.year'][-1],"%0.4i-12-31"%da_ts['time.year'][-1]))].time.values+datetime.timedelta(days=365)))
+                                            time=da_ts.loc[
+                                                dict(time=slice("%0.4i-01-01"%da_ts['time.year'][-1],
+                                                                "%0.4i-12-31"%da_ts['time.year'][-1]))].time.values
+                                                                +datetime.timedelta(days=365)))
+                 )
         da_end = da_end.reindex(time=list(reversed(da_end.time.values)))
         
         da_symm = xr.concat([da_front,da_ts,da_end],dim='time')
