@@ -9,13 +9,13 @@ There are total three types of outputs corresponding to different SST
 shuffling pattern including
 
 1. 1 day spatial pattern shuffle
-2. 5 days chunck spatial pattenr shuffle
+2. 5 days chunck spatial pattern shuffle
 3. pointwise shuffle
 
 To confined the shuffling result in only the tropical region and 
-avoid the discontinuity of sharp difference between shuffled tropic
+avoid the discontinuity of sharp difference between shuffled tropics
 and unshuffled extratropics. We impliment blending region in 25-35N/S 
-zone. The idea is to keep 
+zone. The ideas are 
 - poleward of 35N/S, SSTAs will be identical to those from the coupled model
 - equatorward of 25N/S, SSTAs will be shuffled
 - from 35S-25S and 25N-35N, SSTAs will be a blend of coupled and shuffled
