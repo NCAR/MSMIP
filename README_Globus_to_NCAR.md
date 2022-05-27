@@ -7,4 +7,5 @@
 3. In globus search for the 'MSMIP Data Share' collection
 4. Connect to your local or institutional Globus end node
 5. Transfer data into simulation/< your institution> directory on the MSMIP Data Share end node
-6. Send email to Rich Neale (rneale@ucar.edu) confiriming your transfer or if you have problems (I have heard of firewall-type probems before)
+6. BE CAREFUL: Don't send too much data (if it's greater than 10Tb - let Rich Neale  (rneale@ucar.edu) know before transferring.
+7. Send email to Rich Neale (rneale@ucar.edu) confiriming your transfer or if you have problems (I have heard of firewall-type probems before)
